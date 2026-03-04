@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Cursor Enterprise Plan Support**: Fixed quota monitoring for enterprise accounts where `limitType` is `"team"`. Previously the parser always threw `"No usage data found"` because `individualUsage.plan.limit` is `0` on enterprise plans. The parser now falls back to `breakdown.total` for the individual credit limit and reads `teamUsage.onDemand` as an additional team quota source (reported in [#136](https://github.com/tddworks/ClaudeBar/issues/136)).
+
 ## [0.4.38] - 2026-02-25
 
 ### Added
