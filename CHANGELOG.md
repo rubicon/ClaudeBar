@@ -536,7 +536,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Menu bar interface with quota display
 - Automatic refresh every 5 minutes
 
-[Unreleased]: https://github.com/tddworks/ClaudeBar/compare/v0.4.28...HEAD
+[Unreleased]: https://github.com/tddworks/ClaudeBar/compare/v0.4.38...HEAD
+[0.4.38]: https://github.com/tddworks/ClaudeBar/compare/v0.4.37...v0.4.38
 [0.4.28]: https://github.com/tddworks/ClaudeBar/compare/v0.4.27...v0.4.28
 [0.4.26]: https://github.com/tddworks/ClaudeBar/compare/v0.4.2...v0.4.26
 [0.4.2]: https://github.com/tddworks/ClaudeBar/compare/v0.4.1...v0.4.2
