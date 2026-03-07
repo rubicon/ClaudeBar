@@ -21,6 +21,17 @@ struct AmpCodeUsageProbeParsingTests {
     Individual credits: $0 remaining - https://ampcode.com/settings
     """
 
+    static let sampleOutputWithIndividualCredits = """
+    Signed in as user@example.com (username)
+    Amp Free: $17.59/$20 remaining (replenishes +$0.83/hour) [+100% bonus for 19 more days] - https://ampcode.com/settings#amp-free
+    Individual credits: $50 remaining - https://ampcode.com/settings
+    """
+
+    static let sampleOutputIndividualCreditsOnly = """
+    Signed in as user@example.com (username)
+    Individual credits: $50 remaining - https://ampcode.com/settings
+    """
+
     // MARK: - Parsing Tests
 
     @Test
@@ -64,16 +75,74 @@ struct AmpCodeUsageProbeParsingTests {
     }
 
     @Test
-    func `skips lines without total`() throws {
-        // Given - "Individual credits: $0 remaining" has no denominator
+    func `parses both free and individual credits as separate quotas`() throws {
+        // Given - both lines present with non-zero values
+        let text = Self.sampleOutputWithIndividualCredits
+
+        // When
+        let snapshot = try AmpCodeUsageProbe.parse(text)
+
+        // Then - both quotas parsed
+        #expect(snapshot.quotas.count == 2)
+        let freeQuota = snapshot.quotas.first { $0.quotaType == .modelSpecific("Amp Free") }
+        let creditsQuota = snapshot.quotas.first { $0.quotaType == .modelSpecific("Individual credits") }
+        #expect(freeQuota != nil)
+        #expect(creditsQuota != nil)
+    }
+
+    @Test
+    func `individual credits has dollarRemaining set`() throws {
+        // Given
+        let text = Self.sampleOutputWithIndividualCredits
+
+        // When
+        let snapshot = try AmpCodeUsageProbe.parse(text)
+
+        // Then - $50 remaining with no cap
+        let creditsQuota = snapshot.quotas.first { $0.quotaType == .modelSpecific("Individual credits") }
+        #expect(creditsQuota?.dollarRemaining == 50)
+        #expect(creditsQuota?.percentRemaining == 100)
+    }
+
+    @Test
+    func `individual credits zero remaining has dollarRemaining zero`() throws {
+        // Given - "$0 remaining" with no denominator
         let text = Self.sampleOutput
 
         // When
         let snapshot = try AmpCodeUsageProbe.parse(text)
 
-        // Then - only "Amp Free" should produce a quota (it has $remaining/$total)
+        // Then
+        let creditsQuota = snapshot.quotas.first { $0.quotaType == .modelSpecific("Individual credits") }
+        #expect(creditsQuota?.dollarRemaining == 0)
+        #expect(creditsQuota?.percentRemaining == 100)
+    }
+
+    @Test
+    func `free tier quota has nil dollarRemaining`() throws {
+        // Given
+        let text = Self.sampleOutput
+
+        // When
+        let snapshot = try AmpCodeUsageProbe.parse(text)
+
+        // Then - percentage-based quota should not have dollarRemaining
+        let freeQuota = snapshot.quotas.first { $0.quotaType == .modelSpecific("Amp Free") }
+        #expect(freeQuota?.dollarRemaining == nil)
+    }
+
+    @Test
+    func `individual credits only is valid snapshot`() throws {
+        // Given - no free tier line, only individual credits
+        let text = Self.sampleOutputIndividualCreditsOnly
+
+        // When
+        let snapshot = try AmpCodeUsageProbe.parse(text)
+
+        // Then
         #expect(snapshot.quotas.count == 1)
-        #expect(snapshot.quotas[0].quotaType == .modelSpecific("Amp Free"))
+        #expect(snapshot.quotas[0].quotaType == .modelSpecific("Individual credits"))
+        #expect(snapshot.quotas[0].dollarRemaining == 50)
     }
     @Test
     func `maps to correct QuotaType`() throws {
