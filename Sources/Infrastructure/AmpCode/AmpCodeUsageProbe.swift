@@ -23,6 +23,10 @@ public struct AmpCodeUsageProbe: UsageProbe {
         pattern: #"^(.+?):\s*\$([0-9]+(?:\.[0-9]+)?)\s*/\s*\$([0-9]+(?:\.[0-9]+)?)\s+remaining"#,
         options: .caseInsensitive
     )
+    private static let balanceLineRegex = try! NSRegularExpression(
+        pattern: #"^(.+?):\s*\$([0-9]+(?:\.[0-9]+)?)\s+remaining"#,
+        options: .caseInsensitive
+    )
     private static let tierMappings: [String: String] = [
         "amp free": "Free"
     ]
@@ -104,9 +108,10 @@ public struct AmpCodeUsageProbe: UsageProbe {
         // Extract email from "Signed in as <email> (<username>)"
         let email = extractEmail(from: lines)
 
-        // Parse credit lines: "<Label>: $<remaining>/$<total> remaining ..."
-        // Only lines with $remaining/$total produce a quota (percentage computable)
-        let quotas = lines.compactMap { parseCreditLine($0) }
+        // Parse credit lines:
+        // - "$remaining/$total remaining" → percentage-based quota
+        // - "$remaining remaining" (no total) → balance-based quota with dollarRemaining
+        let quotas = lines.compactMap { parseCreditLine($0) ?? parseBalanceLine($0) }
 
         guard !quotas.isEmpty else {
             AppLog.probes.error("AmpCode parse failed: no valid credit lines found")
@@ -144,8 +149,8 @@ public struct AmpCodeUsageProbe: UsageProbe {
         return nil
     }
 
-    /// Parses a credit line into a UsageQuota if it has $remaining/$total format.
-    /// Returns nil for lines without a denominator (e.g., "$0 remaining").
+    /// Parses a credit line with $remaining/$total format into a percentage-based UsageQuota.
+    /// Returns nil for lines without a denominator.
     ///
     /// Format: "<Label>: $<remaining>/$<total> remaining ..."
     private static func parseCreditLine(_ line: String) -> UsageQuota? {
@@ -172,6 +177,35 @@ public struct AmpCodeUsageProbe: UsageProbe {
             percentRemaining: rounded,
             quotaType: .modelSpecific(label),
             providerId: "ampcode"
+        )
+    }
+
+    /// Parses a balance line with no total into a credit-based UsageQuota.
+    /// Uses dollarRemaining to store the balance, percentRemaining is 100 (no cap).
+    ///
+    /// Format: "<Label>: $<remaining> remaining ..."
+    private static func parseBalanceLine(_ line: String) -> UsageQuota? {
+        // Skip lines that match the $remaining/$total pattern (handled by parseCreditLine)
+        if creditLineRegex.firstMatch(in: line, range: NSRange(line.startIndex..<line.endIndex, in: line)) != nil {
+            return nil
+        }
+
+        guard let match = balanceLineRegex.firstMatch(in: line, range: NSRange(line.startIndex..<line.endIndex, in: line)),
+              let labelRange = Range(match.range(at: 1), in: line),
+              let amountRange = Range(match.range(at: 2), in: line) else {
+            return nil
+        }
+
+        let label = String(line[labelRange]).trimmingCharacters(in: .whitespaces)
+        guard let amount = Decimal(string: String(line[amountRange])) else {
+            return nil
+        }
+
+        return UsageQuota(
+            percentRemaining: 100,
+            quotaType: .modelSpecific(label),
+            providerId: "ampcode",
+            dollarRemaining: amount
         )
     }
 }
