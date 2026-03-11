@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Daily Usage Report Cards**: See your daily Claude Code cost, token usage, and working time right in the menu bar. ClaudeBar now analyzes your local session files (`~/.claude/projects/`) and displays three new cards below the quota cards:
+  - **Cost Usage** — Estimated daily spend based on token counts and Anthropic's published model pricing (Opus, Sonnet, Haiku)
+  - **Token Usage** — Total tokens consumed (input, output, and cache)
+  - **Working Time** — Time spent in Claude Code sessions, estimated from message timestamps
+  - Each card shows a comparison delta vs the previous day (e.g., "Vs Mar 10 -$27.47 (4.9%)")
+  - Only scans recently modified files for fast performance even with thousands of sessions
+
 ---
 
 ## [0.4.42] - 2026-03-09
