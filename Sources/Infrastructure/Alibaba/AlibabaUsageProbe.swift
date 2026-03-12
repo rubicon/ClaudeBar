@@ -4,15 +4,18 @@ import Domain
 public struct AlibabaUsageProbe: UsageProbe {
     private let settingsRepository: any AlibabaSettingsRepository
     private let networkClient: any NetworkClient
+    private let cookieProvider: any AlibabaCookieProviding
     private let timeout: TimeInterval
 
     public init(
         settingsRepository: any AlibabaSettingsRepository,
         networkClient: (any NetworkClient)? = nil,
+        cookieProvider: (any AlibabaCookieProviding)? = nil,
         timeout: TimeInterval = 15.0
     ) {
         self.settingsRepository = settingsRepository
         self.networkClient = networkClient ?? URLSession.shared
+        self.cookieProvider = cookieProvider ?? AlibabaBrowserCookieProvider()
         self.timeout = timeout
     }
 
@@ -31,8 +34,9 @@ public struct AlibabaUsageProbe: UsageProbe {
                 return true
             }
         case .auto:
-            // Auto cookie from browser - check at probe time
-            break
+            if let cookie = cookieProvider.extractBrowserCookies(), !cookie.isEmpty {
+                return true
+            }
         }
 
         return false
@@ -67,9 +71,10 @@ public struct AlibabaUsageProbe: UsageProbe {
     }
 
     private func extractBrowserCookies() throws -> String {
-        // SweetCookieKit integration for auto cookie extraction
-        // This will be implemented with SweetCookieKit to read aliyun.com cookies
-        throw ProbeError.authenticationRequired
+        guard let cookie = cookieProvider.extractBrowserCookies(), !cookie.isEmpty else {
+            throw ProbeError.authenticationRequired
+        }
+        return cookie
     }
 
     private func fetchWithApiKey(_ apiKey: String, region: AlibabaRegion) async throws -> UsageSnapshot {

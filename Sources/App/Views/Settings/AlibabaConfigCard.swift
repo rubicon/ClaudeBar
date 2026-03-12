@@ -19,12 +19,7 @@ struct AlibabaConfigCard: View {
     @State private var alibabaTestResult: String?
 
     private var dashboardURL: URL {
-        switch alibabaRegion {
-        case .international:
-            URL(string: "https://modelstudio.console.alibabacloud.com")!
-        case .chinaMainland:
-            URL(string: "https://bailian.console.alibabacloud.com")!
-        }
+        alibabaRegion.dashboardURL
     }
 
     var body: some View {
