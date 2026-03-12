@@ -189,7 +189,7 @@ public final class {Provider}Provider: AIProvider, @unchecked Sendable {
 Add to `Sources/App/ClaudeBarApp.swift`:
 
 ```swift
-let settingsRepository = UserDefaultsProviderSettingsRepository.shared
+let settingsRepository = JSONSettingsRepository.shared
 
 let repository = AIProviders(providers: [
     ClaudeProvider(probe: ClaudeUsageProbe(), settingsRepository: settingsRepository),
@@ -276,15 +276,19 @@ public protocol {Provider}SettingsRepository: ProviderSettingsRepository {
 
 ### Step 2: Implement in Infrastructure
 
-Add to `Sources/Infrastructure/Storage/UserDefaultsProviderSettingsRepository.swift`:
+Add to `Sources/Infrastructure/Storage/JSONSettingsRepository.swift`:
 
 ```swift
-extension UserDefaultsProviderSettingsRepository: {Provider}SettingsRepository {
+// MARK: - {Provider}SettingsRepository
+
+extension JSONSettingsRepository: {Provider}SettingsRepository {
     public func {provider}ConfigPath() -> String {
-        userDefaults.string(forKey: Keys.{provider}ConfigPath) ?? ""
+        store.read(key: "{provider}.configPath") ?? ""
     }
 
-    // ... other methods
+    public func set{Provider}ConfigPath(_ path: String) {
+        store.write(value: path, key: "{provider}.configPath")
+    }
 }
 ```
 

@@ -82,8 +82,9 @@ The key principle is **QuotaMonitor as Single Source of Truth** - all provider s
 │                                                                      │
 │  Storage (Sources/Infrastructure/Storage/)                          │
 │  ├── AIProviders - implements AIProviderRepository                  │
-│  └── UserDefaultsProviderSettingsRepository                         │
-│      └── Implements all sub-protocols (ISP single implementation)   │
+│  ├── JSONSettingsStore - thread-safe JSON file I/O                  │
+│  └── JSONSettingsRepository                                         │
+│      └── Implements all settings protocols (ISP single impl)        │
 │                                                                      │
 │  Adapters (Sources/Infrastructure/Adapters/) - excluded from coverage│
 │  ├── PTYCommandRunner - runs CLI with PTY                           │
@@ -181,10 +182,14 @@ public protocol CopilotSettingsRepository: ProviderSettingsRepository {
 }
 
 // Single infrastructure implementation for all protocols
-public final class UserDefaultsProviderSettingsRepository:
+public final class JSONSettingsRepository:
+    AppSettingsRepository,
     ZaiSettingsRepository,
-    CopilotSettingsRepository {
-    // Persists to UserDefaults
+    CopilotSettingsRepository,
+    // ... all other sub-protocols
+{
+    // Persists to ~/.claudebar/settings.json via JSONSettingsStore
+    // Credentials (tokens, API keys) use UserDefaults (Keychain migration planned)
 }
 ```
 
@@ -296,7 +301,7 @@ provider.isEnabled = false
 didSet → settingsRepository.setEnabled(false, forProvider: id)
         │
         ▼
-UserDefaults persists the change
+JSON settings file persists the change
         │
         ▼
 AIProviders.enabled recomputes (filters by isEnabled)

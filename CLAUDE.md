@@ -96,11 +96,41 @@ ProviderSettingsRepository (base)
 **Provider Dependencies:**
 | Provider | Repository Type |
 |----------|----------------|
-| Claude, Codex, Gemini, Antigravity, Amp Code | `ProviderSettingsRepository` |
+| Claude, Codex, Gemini, Antigravity, Amp Code, Kiro, Cursor | `ProviderSettingsRepository` |
 | Z.ai | `ZaiSettingsRepository` |
 | Copilot | `CopilotSettingsRepository` |
 | Bedrock | `BedrockSettingsRepository` |
 | Kimi | `KimiSettingsRepository` |
+| MiniMax | `MiniMaxSettingsRepository` |
+
+### Settings Storage
+
+All settings are persisted in a single JSON file (`~/.claudebar/settings.json`) via `JSONSettingsRepository`.
+
+```
+Sources/Infrastructure/Storage/
+├── JSONSettingsStore.swift          # Low-level JSON file I/O (dot-notation keys)
+└── JSONSettingsRepository.swift     # Implements ALL settings protocols
+
+Sources/App/Settings/
+└── AppSettings.swift               # @Observable wrapper for SwiftUI reactivity
+```
+
+**Architecture:**
+- `JSONSettingsStore` — Thread-safe read/write with dot-notation key paths (e.g., `app.themeMode`, `claude.probeMode`, `providers.claude.isEnabled`)
+- `JSONSettingsRepository` — Single class implementing `AppSettingsRepository` + all provider sub-protocols + `HookSettingsRepository`
+- `AppSettings` — `@Observable` facade for SwiftUI; exposes typed provider accessors (`settings.claude`, `settings.copilot`, etc.)
+- Credentials (GitHub token, MiniMax API key) remain in UserDefaults (Keychain migration planned)
+
+**Key namespacing in settings.json:**
+| Namespace | Examples |
+|-----------|---------|
+| `app.*` | `app.themeMode`, `app.showDailyUsageCards`, `app.backgroundSyncEnabled` |
+| `providers.{id}.*` | `providers.claude.isEnabled`, `providers.copilot.isEnabled` |
+| `claude.*` | `claude.probeMode` |
+| `copilot.*` | `copilot.probeMode`, `copilot.authEnvVar` |
+| `bedrock.*` | `bedrock.awsProfile`, `bedrock.regions` |
+| `hook.*` | `hook.enabled`, `hook.port` |
 
 ### Theme System
 
@@ -152,7 +182,7 @@ public protocol MyProviderSettingsRepository: ProviderSettingsRepository {
     func setMySpecialConfig(_ value: String)
 }
 
-// Then add implementation to UserDefaultsProviderSettingsRepository
+// Then add implementation to JSONSettingsRepository
 ```
 
 **Skill location:** `.claude/skills/add-provider/SKILL.md`

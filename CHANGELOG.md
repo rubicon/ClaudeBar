@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Daily Usage Cards Toggle**: New setting to show/hide daily usage report cards (API Cost, Token Usage, Working Time) in the menu bar. Useful for users who don't use the Claude API or prefer a cleaner view. Toggle in Settings → Display.
+
+### Improved
+- **Settings Storage Migration**: Migrated all settings from UserDefaults to a unified JSON file (`~/.claudebar/settings.json`). Settings are now backed by `JSONSettingsRepository` with dot-notation key paths, making them easier to inspect, debug, and test. Credentials (GitHub token, MiniMax API key) remain in UserDefaults for now.
+- **Settings Architecture**: `AppSettings` now exposes typed provider accessors (`settings.claude`, `settings.copilot`, etc.) via ISP sub-protocols, replacing direct `UserDefaultsProviderSettingsRepository.shared` calls throughout the codebase.
+
+### Fixed
+- **Daily Usage Report**: Fixed daily usage cards not appearing when today's usage is $0.00 but yesterday has data. The report now shows whenever either today or the previous day has usage data.
+
+### Technical
+- Added `JSONSettingsStore` for thread-safe JSON file I/O with nested dot-notation key paths
+- Added `JSONSettingsRepository` implementing all settings protocols (`AppSettingsRepository`, `ClaudeSettingsRepository`, `CopilotSettingsRepository`, `BedrockSettingsRepository`, `KimiSettingsRepository`, `MiniMaxSettingsRepository`, `HookSettingsRepository`, etc.)
+- Added `AppSettingsRepository` domain protocol with `@Mockable` for testability
+- Refactored `AppSettings` to use `JSONSettingsRepository` as private backing store with typed protocol accessors
+- Added `showDailyUsageCards` setting end-to-end (toggle → AppSettings → JSONSettingsRepository → settings.json)
+- 87+ new settings tests (JSONSettingsStore: 18, JSONSettingsRepository app: 20, provider: 29)
+- Reorganized provider tests into subfolder structure (`Tests/DomainTests/Provider/Claude/`, `Copilot/`, etc.)
+
 ---
 
 ## [0.4.43] - 2026-03-11
@@ -116,7 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `SessionEventParser` for parsing Claude Code hook JSON payloads
 - Added `HookInstaller` with atomic writes and corruption-safe JSON handling
 - Added `PortDiscovery` for writing/reading `~/.claude/claudebar-hook-port`
-- Added `HookSettingsRepository` protocol and `UserDefaults` implementation
+- Added `HookSettingsRepository` protocol and JSON-backed implementation
 - Added `CopilotProbeMode` enum, `CopilotInternalAPIProbe`, and dual probe support in `CopilotProvider`
 - Added `com.apple.security.network.server` entitlement for `NWListener`
 - Added `AppLog.hooks` logging category
@@ -129,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Overview Mode**: New "Overview" toggle in Settings to display all enabled providers at once in a single scrollable view. Ideal for juggling multiple AI assistants (Claude + Codex + Kimi + ...) throughout the day — see all your quotas at a glance without switching between pills.
 
 ### Technical
-- Added `overviewModeEnabled` setting to `AppSettings` with UserDefaults persistence
+- Added `overviewModeEnabled` setting to `AppSettings`
 - Added scrollable overview layout with per-provider sections reusing existing stat cards, capped at 80% screen height
 
 ## [0.4.31] - 2026-02-12
@@ -208,7 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical
 - Added `UsageDisplayMode` enum in Domain layer with `.remaining` and `.used` cases
 - Added `displayPercent(mode:)` and `displayProgressPercent(mode:)` methods to `UsageQuota`
-- Added `usageDisplayMode` to `AppSettings` with UserDefaults persistence (default: `.remaining`)
+- Added `usageDisplayMode` to `AppSettings` (default: `.remaining`)
 - Updated `WrappedStatCard` and `QuotaCardView` to use display mode for percentage and label
 - Added "Quota Display" settings card with two-button toggle
 - 12 new tests covering display mode enum, percent calculation, and progress bar behavior
@@ -356,7 +375,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extended `ProbeError` with `subscriptionRequired` case for API billing detection
 - Implemented `/cost` command parsing with cost value and API duration extraction
 - Added ISP-based repository hierarchy for provider-specific settings (`ZaiSettingsRepository`, `CopilotSettingsRepository`)
-- Namespaced UserDefaults keys with `providerConfig.` prefix for cleaner storage
+- Namespaced settings keys with dot-notation prefixes for cleaner storage
 - Added `NotificationAlerter` unit tests
 - Comprehensive test coverage for API billing detection and cost parsing
 
