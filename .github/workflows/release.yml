@@ -48,7 +48,10 @@ jobs:
           swift-version: ${{ env.SWIFT_VERSION }}
 
       - name: Install Tuist
-        run: brew install tuist
+        run: |
+          curl -Ls https://github.com/tuist/tuist/releases/download/4.153.1/tuist.zip -o /tmp/tuist.zip
+          unzip -o /tmp/tuist.zip -d /usr/local/bin/
+          tuist version
 
       - name: Cache Tuist
         uses: actions/cache@v4
@@ -104,7 +107,6 @@ jobs:
       - name: Generate Xcode Project
         run: |
           tuist generate --no-open
-          ./scripts/fix-swiftterm-metal.sh
           echo "=== Available schemes ==="
           xcodebuild -workspace ClaudeBar.xcworkspace -list
 
