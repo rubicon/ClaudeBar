@@ -1,0 +1,124 @@
+import Foundation
+
+/// Represents a parsed extension manifest (manifest.json).
+/// Each extension defines one or more sections, each with its own probe command.
+public struct ExtensionManifest: Sendable, Equatable {
+    public let id: String
+    public let name: String
+    public let version: String
+    public let description: String?
+    public let icon: String?
+    public let colors: ExtensionColors?
+    public let dashboardURL: URL?
+    public let statusPageURL: URL?
+    public let sections: [ExtensionSection]
+
+    public init(
+        id: String,
+        name: String,
+        version: String,
+        description: String? = nil,
+        icon: String? = nil,
+        colors: ExtensionColors? = nil,
+        dashboardURL: URL? = nil,
+        statusPageURL: URL? = nil,
+        sections: [ExtensionSection]
+    ) {
+        self.id = id
+        self.name = name
+        self.version = version
+        self.description = description
+        self.icon = icon
+        self.colors = colors
+        self.dashboardURL = dashboardURL
+        self.statusPageURL = statusPageURL
+        self.sections = sections
+    }
+
+    /// Parses a manifest from JSON data.
+    public static func parse(from data: Data) throws -> ExtensionManifest {
+        let decoder = JSONDecoder()
+        let raw = try decoder.decode(RawManifest.self, from: data)
+
+        guard !raw.sections.isEmpty else {
+            throw ExtensionManifestError.emptySections
+        }
+
+        let sections = try raw.sections.map { rawSection -> ExtensionSection in
+            guard let type = SectionType(rawValue: rawSection.type) else {
+                throw ExtensionManifestError.unknownSectionType(rawSection.type)
+            }
+            return ExtensionSection(
+                id: rawSection.id,
+                type: type,
+                probeCommand: rawSection.probe.command,
+                refreshInterval: rawSection.probe.interval ?? 60,
+                timeout: rawSection.probe.timeout ?? 10
+            )
+        }
+
+        return ExtensionManifest(
+            id: raw.id,
+            name: raw.name,
+            version: raw.version,
+            description: raw.description,
+            icon: raw.icon,
+            colors: raw.colors,
+            dashboardURL: raw.dashboardURL.flatMap { URL(string: $0) },
+            statusPageURL: raw.statusPageURL.flatMap { URL(string: $0) },
+            sections: sections
+        )
+    }
+}
+
+// MARK: - Supporting Types
+
+public struct ExtensionColors: Sendable, Equatable, Codable {
+    public let primary: String
+    public let gradient: [String]?
+
+    public init(primary: String, gradient: [String]? = nil) {
+        self.primary = primary
+        self.gradient = gradient
+    }
+}
+
+public enum ExtensionManifestError: Error, LocalizedError {
+    case emptySections
+    case unknownSectionType(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .emptySections:
+            "Extension manifest must have at least one section"
+        case .unknownSectionType(let type):
+            "Unknown section type: '\(type)'"
+        }
+    }
+}
+
+// MARK: - Raw JSON Decoding Types
+
+private struct RawManifest: Codable {
+    let id: String
+    let name: String
+    let version: String
+    let description: String?
+    let icon: String?
+    let colors: ExtensionColors?
+    let dashboardURL: String?
+    let statusPageURL: String?
+    let sections: [RawSection]
+}
+
+private struct RawSection: Codable {
+    let id: String
+    let type: String
+    let probe: RawProbe
+}
+
+private struct RawProbe: Codable {
+    let command: String
+    let interval: TimeInterval?
+    let timeout: TimeInterval?
+}
