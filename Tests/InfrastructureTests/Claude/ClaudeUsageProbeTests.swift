@@ -324,24 +324,11 @@ struct ClaudeUsageProbeTests {
             autoResponses: .any
         ).willReturn(CLIResult(output: tabbedUsageOutput, exitCode: 0))
 
-        // Create a temp config file with account info
-        let configJSON = """
-        {
-            "oauthAccount": {
-                "emailAddress": "user@example.com",
-                "displayName": "testuser",
-                "organizationUuid": "org-456",
-                "billingType": "stripe_subscription"
-            }
-        }
-        """
-        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        let configFile = tempDir.appendingPathComponent(".claude.json")
-        try! configJSON.data(using: .utf8)!.write(to: configFile)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        // Mock resolver returns account info
+        let mockResolver = MockAccountInfoResolving()
+        given(mockResolver).resolve().willReturn(AccountInfo(email: "user@example.com", organization: "testuser"))
 
-        let probe = ClaudeUsageProbe(cliExecutor: mockExecutor, configURL: configFile)
+        let probe = ClaudeUsageProbe(cliExecutor: mockExecutor, accountInfoResolver: mockResolver)
 
         // When
         let snapshot = try await probe.probe()
