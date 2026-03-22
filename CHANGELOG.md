@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.4.56] - 2026-03-22
+
 ### Added
 - Mistral provider backed by Vibe session logs for quota monitoring.
 
@@ -675,7 +679,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Menu bar interface with quota display
 - Automatic refresh every 5 minutes
 
-[Unreleased]: https://github.com/tddworks/ClaudeBar/compare/v0.4.55...HEAD
+[Unreleased]: https://github.com/tddworks/ClaudeBar/compare/v0.4.56...HEAD
+[0.4.56]: https://github.com/tddworks/ClaudeBar/compare/v0.4.55...v0.4.56
 [0.4.55]: https://github.com/tddworks/ClaudeBar/compare/v0.4.54...v0.4.55
 [0.4.54]: https://github.com/tddworks/ClaudeBar/compare/v0.4.53...v0.4.54
 [0.4.53]: https://github.com/tddworks/ClaudeBar/compare/v0.4.52...v0.4.53
