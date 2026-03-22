@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Mistral provider backed by Vibe session logs for quota monitoring.
+
+### Fixed
+- Mistral probe now uses Vibe's `session_total_llm_tokens` and `session_cost` fields for accurate usage tracking.
+
 ---
 
 ## [0.4.55] - 2026-03-20
