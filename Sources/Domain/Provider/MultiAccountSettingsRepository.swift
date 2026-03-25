@@ -1,5 +1,4 @@
 import Foundation
-import Mockable
 
 /// Settings repository extension for multi-account provider configuration.
 ///
@@ -12,7 +11,10 @@ import Mockable
 /// - `email`: Optional email
 /// - `organization`: Optional organization
 /// - `probeConfig`: Provider-specific probe configuration (e.g., CLI profile, API token env var)
-@Mockable
+///
+/// Note: @Mockable is intentionally omitted here. The macro cannot generate stubs
+/// for inherited protocol requirements (Mockable#128). When tests need a mock,
+/// use the aggregate-protocol pattern recommended by the Mockable maintainer.
 public protocol MultiAccountSettingsRepository: ProviderSettingsRepository {
     /// Gets all configured accounts for a provider.
     /// Returns an empty array for single-account providers (backward compatible).

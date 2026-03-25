@@ -1,5 +1,4 @@
 import Foundation
-import Mockable
 
 /// Protocol for providers that support multiple accounts.
 ///
@@ -10,7 +9,12 @@ import Mockable
 /// Design rationale: This is an opt-in protocol rather than a change to `AIProvider`.
 /// Existing providers continue to work unchanged. The `QuotaMonitor` checks for
 /// conformance and adapts its behavior accordingly.
-@Mockable
+///
+/// Note: @Mockable is intentionally omitted here. The macro cannot generate stubs
+/// for inherited protocol requirements (Mockable#128). When tests need a mock,
+/// use the aggregate-protocol pattern recommended by the Mockable maintainer:
+/// create a flat @Mockable protocol in the test target that re-declares all
+/// requirements from both AIProvider and MultiAccountProvider.
 public protocol MultiAccountProvider: AIProvider {
     /// All accounts registered for this provider
     var accounts: [ProviderAccount] { get }
