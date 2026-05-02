@@ -572,23 +572,7 @@ struct MenuContentView: View {
                     DailyUsageCardView(metric: .cost, report: report, delay: baseDelay)
                     DailyUsageCardView(metric: .tokens, report: report, delay: baseDelay + 0.08)
                 }
-                let hasCache = report.today.totalCacheTokens > 0 || report.previous.totalCacheTokens > 0
-                if hasCache {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 10),
-                            GridItem(.flexible(), spacing: 10)
-                        ],
-                        spacing: 10
-                    ) {
-                        DailyUsageCardView(metric: .cacheHitRate, report: report, delay: baseDelay + 0.16)
-                        DailyUsageCardView(metric: .cacheSavings, report: report, delay: baseDelay + 0.24)
-                        DailyUsageCardView(metric: .cacheTokens, report: report, delay: baseDelay + 0.32)
-                        if report.today.workingTime > 0 || report.previous.workingTime > 0 {
-                            DailyUsageCardView(metric: .workingTime, report: report, delay: baseDelay + 0.40)
-                        }
-                    }
-                } else if report.today.workingTime > 0 || report.previous.workingTime > 0 {
+                if report.today.workingTime > 0 || report.previous.workingTime > 0 {
                     DailyUsageCardView(metric: .workingTime, report: report, delay: baseDelay + 0.16)
                 }
             }

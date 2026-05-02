@@ -108,33 +108,30 @@ struct DailyUsageCardView: View {
         case .cost: return report.today.formattedCost
         case .tokens: return report.today.formattedTotalTokensWithCache
         case .workingTime: return report.today.formattedWorkingTime
-        case .cacheHitRate: return report.today.formattedHitRate
-        case .cacheSavings: return report.today.formattedSavings
-        case .cacheTokens: return report.today.formattedCacheTokens
         }
     }
 
     private var subtitleText: String? {
         switch metric {
+        case .cost:
+            // Highlight cache savings as a discount line under the cost
+            let savings = report.today.cachedSavings
+            guard savings > 0 else { return nil }
+            let costNum = Double(truncating: report.today.totalCost as NSDecimalNumber)
+            let savingsNum = Double(truncating: savings as NSDecimalNumber)
+            let total = costNum + savingsNum
+            guard total > 0 else { return "Saved \(report.today.formattedSavings)" }
+            let discount = savingsNum / total * 100
+            return "Saved \(report.today.formattedSavings) (\(String(format: "%.0f", discount))%)"
         case .tokens:
-            // Show cache breakdown only when cache data exists
+            // Show cache share as plain "X% from cache"
             let cacheTotal = report.today.totalCacheTokens
             guard cacheTotal > 0 else { return nil }
             let cachePct = Double(cacheTotal) / Double(max(1, report.today.totalTokensWithCache)) * 100
-            return "Cache: \(report.today.formattedCacheTokens) (\(String(format: "%.1f", cachePct))%)"
-        case .cacheHitRate:
-            // Show absolute counts under hit rate
-            let read = report.today.cacheReadTokens
-            return "\(formatTokenCompact(read)) read"
-        default:
+            return "\(String(format: "%.0f", cachePct))% from cache"
+        case .workingTime:
             return nil
         }
-    }
-
-    private func formatTokenCompact(_ n: Int) -> String {
-        if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000.0) }
-        if n >= 1_000 { return String(format: "%.1fK", Double(n) / 1_000.0) }
-        return "\(n)"
     }
 
     private var progress: Double {
@@ -142,15 +139,6 @@ struct DailyUsageCardView: View {
         case .cost: return min(1, max(0, report.costProgress))
         case .tokens: return min(1, max(0, report.tokenProgress))
         case .workingTime: return min(1, max(0, report.timeProgress))
-        case .cacheHitRate: return min(1, max(0, report.today.cacheHitRate))
-        case .cacheSavings:
-            let total = report.today.cachedSavings + report.previous.cachedSavings
-            guard total > 0 else { return 0 }
-            return Double(truncating: report.today.cachedSavings as NSDecimalNumber) / Double(truncating: total as NSDecimalNumber)
-        case .cacheTokens:
-            let total = report.today.totalCacheTokens + report.previous.totalCacheTokens
-            guard total > 0 else { return 0 }
-            return Double(report.today.totalCacheTokens) / Double(total)
         }
     }
 
@@ -176,12 +164,6 @@ struct DailyUsageCardView: View {
                 return "Vs \(date) \(delta) (\(String(format: "%.1f", abs(pct)))%)"
             }
             return "Vs \(date) \(delta)"
-        case .cacheHitRate:
-            return "Vs \(date) \(report.formattedCacheHitRateDelta)"
-        case .cacheSavings:
-            return "Vs \(date) \(report.formattedSavingsDelta)"
-        case .cacheTokens:
-            return "Vs \(date) \(report.formattedCacheTokenDelta)"
         }
     }
 
@@ -193,14 +175,6 @@ struct DailyUsageCardView: View {
             return report.tokenDelta <= 0 ? .green : .orange
         case .workingTime:
             return theme.textTertiary
-        case .cacheHitRate:
-            // Higher hit rate is better
-            return report.cacheHitRateDelta >= 0 ? .green : .orange
-        case .cacheSavings:
-            // More savings is better
-            return report.savingsDelta >= 0 ? .green : .orange
-        case .cacheTokens:
-            return theme.textTertiary
         }
     }
 }
@@ -211,18 +185,12 @@ enum DailyUsageMetric {
     case cost
     case tokens
     case workingTime
-    case cacheHitRate
-    case cacheSavings
-    case cacheTokens
 
     var label: String {
         switch self {
         case .cost: return "Cost Usage"
         case .tokens: return "Token Usage"
         case .workingTime: return "Working Time"
-        case .cacheHitRate: return "Cache Hit"
-        case .cacheSavings: return "Cache Saved"
-        case .cacheTokens: return "Cache Tokens"
         }
     }
 
@@ -231,9 +199,6 @@ enum DailyUsageMetric {
         case .cost: return "dollarsign.circle.fill"
         case .tokens: return "number.circle.fill"
         case .workingTime: return "clock.fill"
-        case .cacheHitRate: return "bolt.fill"
-        case .cacheSavings: return "arrow.down.circle.fill"
-        case .cacheTokens: return "tray.full.fill"
         }
     }
 
@@ -242,9 +207,6 @@ enum DailyUsageMetric {
         case .cost: return "Spent"
         case .tokens: return "Tokens"
         case .workingTime: return "Duration"
-        case .cacheHitRate: return "Hit Rate"
-        case .cacheSavings: return "Saved"
-        case .cacheTokens: return "Cached"
         }
     }
 
@@ -253,9 +215,6 @@ enum DailyUsageMetric {
         case .cost: return .yellow
         case .tokens: return .green
         case .workingTime: return .purple
-        case .cacheHitRate: return .cyan
-        case .cacheSavings: return .mint
-        case .cacheTokens: return .teal
         }
     }
 }
