@@ -86,10 +86,20 @@ public struct ClaudeDailyUsageAnalyzer: DailyUsageAnalyzing, Sendable {
 
         var totalCost: Decimal = 0
         var totalTokens = 0
+        var inputTokens = 0
+        var outputTokens = 0
+        var cacheCreationTokens = 0
+        var cacheReadTokens = 0
+        var cachedSavings: Decimal = 0
 
         for record in records {
             totalCost += ModelPricing.cost(for: record)
             totalTokens += record.totalTokens
+            inputTokens += record.inputTokens
+            outputTokens += record.outputTokens
+            cacheCreationTokens += record.cacheCreationTokens
+            cacheReadTokens += record.cacheReadTokens
+            cachedSavings += ModelPricing.savings(for: record)
         }
 
         // Estimate working time from session timestamps (first to last message per session)
@@ -116,7 +126,12 @@ public struct ClaudeDailyUsageAnalyzer: DailyUsageAnalyzing, Sendable {
             totalCost: totalCost,
             totalTokens: totalTokens,
             workingTime: workingTime,
-            sessionCount: sessionCount
+            sessionCount: sessionCount,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            cacheCreationTokens: cacheCreationTokens,
+            cacheReadTokens: cacheReadTokens,
+            cachedSavings: cachedSavings
         )
     }
 }

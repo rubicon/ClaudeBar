@@ -57,6 +57,29 @@ struct ClaudeDailyUsageAnalyzerTests {
         #expect(report.previous.isEmpty)
     }
 
+    @Test func `aggregates cache tokens and savings`() async throws {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let todayStr = formatter.string(from: Date())
+        // Sonnet pricing: input $3/M, cache_read $0.30/M → savings = 1M * $2.70 = $2.70
+        let jsonl = """
+        {"type":"assistant","message":{"model":"claude-sonnet-4-6","usage":{"input_tokens":1000,"output_tokens":500,"cache_creation_input_tokens":2000,"cache_read_input_tokens":1000000}},"timestamp":"\(todayStr)"}
+        """
+        let claudeDir = try setupTempClaudeDir(with: jsonl)
+        defer { try? FileManager.default.removeItem(at: claudeDir) }
+
+        let analyzer = ClaudeDailyUsageAnalyzer(claudeDir: claudeDir)
+        let report = try await analyzer.analyzeToday()
+
+        #expect(report.today.inputTokens == 1000)
+        #expect(report.today.outputTokens == 500)
+        #expect(report.today.cacheCreationTokens == 2000)
+        #expect(report.today.cacheReadTokens == 1_000_000)
+        #expect(report.today.cachedSavings == Decimal(string: "2.7"))
+        // hit rate = 1M / (1M + 1000) ≈ 0.999
+        #expect(report.today.cacheHitRate > 0.99)
+    }
+
     @Test func `separates today and yesterday records`() async throws {
         let now = Date()
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: now))!.addingTimeInterval(3600 * 12)
