@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Cache visibility on Claude daily usage cards**: Token Usage now shows the total *with* cache included plus a "X% from cache" subtitle, and Cost Usage shows a "Saved $X (Y%)" line — making the value of prompt caching visible at a glance.
+- `DailyUsageStat` exposes `inputTokens`, `outputTokens`, `cacheCreationTokens`, `cacheReadTokens`, `cachedSavings`, plus `cacheHitRate`, `totalTokensWithCache`, and formatted helpers for downstream consumers.
+- `ModelPricing.savings(for:)` estimates dollars saved by cache hits (`cache_read × (input_price − cache_read_price)`).
+
+### Fixed
+- **Token Usage card no longer excludes cache tokens**: previously displayed `input + output` only, which under-reported total volume by ~10–100× on cache-heavy workflows.
+- **SwiftTerm Metal duplicate task build error** (tuist/tuist#9111): SwiftTerm now builds as a `.framework` instead of `.staticFramework`, avoiding Tuist 4.78.1+ duplicating `Shaders.metal` into both Sources and Resources phases.
+
 ---
 
 ## [0.4.59] - 2026-04-15
