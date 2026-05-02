@@ -8,12 +8,14 @@ import ProjectDescription
 let packageSettings = PackageSettings(
     // Customize the product types for specific package product
     // Default is .staticFramework
-    // productTypes: ["Alamofire": .framework,]
-    productTypes: [:],
+    // SwiftTerm uses .framework to avoid tuist/tuist#9111 — Tuist 4.78.1+ duplicates
+    // Metal shaders into both Sources and Resources for staticFramework SPM bundles.
+    productTypes: [
+        "SwiftTerm": .framework,
+    ],
     targetSettings: [
         "IssueReporting": ["SWIFT_PACKAGE_NAME": "xctest-dynamic-overlay"],
         "IssueReportingPackageSupport": ["SWIFT_PACKAGE_NAME": "xctest-dynamic-overlay"],
-        "SwiftTerm": ["EXCLUDED_SOURCE_FILE_NAMES": "Shaders.metal"],
     ]
 )
 #endif
